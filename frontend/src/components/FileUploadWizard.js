@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
-import { ArrowRight, Upload, FileText, Search, Bot, Download, CheckCircle } from 'lucide-react';
+import { ArrowRight, Upload, FileText, Bot, Download, CheckCircle } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000'; // Update this if your backend is on a different host/port
 
 const steps = [
   { name: 'Upload File', icon: Upload },
-  { name: 'Parse File', icon: FileText },
-  { name: 'Keyword Search', icon: Search },
-  { name: 'Extract & Structure', icon: Bot },
-  { name: 'Download JSON', icon: Download }
+  { name: 'Process Sections', icon: Bot },
+  { name: 'Download ZIP', icon: Download }
 ];
 
 export default function FileUploadWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [file, setFile] = useState(null);
-  const [parsedData, setParsedData] = useState(null);
+  const [parsedSections, setParsedSections] = useState(null);
   const [keywords, setKeywords] = useState([]);
-  const [extractedData, setExtractedData] = useState(null);
-  const [jsonData, setJsonData] = useState(null);
+  const [zipFileName, setZipFileName] = useState(null);
   const [error, setError] = useState(null);
 
   const handleFileChange = (event) => {
@@ -39,7 +36,8 @@ export default function FileUploadWizard() {
 
       if (response.ok) {
         const data = await response.json();
-        setParsedData(data.parsed_data);
+        setParsedSections(data.parsed_sections);
+        setKeywords(data.keywords);
         setCurrentStep(1);
       } else {
         const errorData = await response.json();
@@ -52,66 +50,42 @@ export default function FileUploadWizard() {
     }
   };
 
-  const handleKeywordSearch = async () => {
+  const handleProcessSections = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/keyword-search`, {
+      const response = await fetch(`${API_BASE_URL}/api/process-sections`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ parsed_data: parsedData }),
+        body: JSON.stringify({
+          parsed_sections: parsedSections,
+          keywords: keywords,
+          original_filename: file.name
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setKeywords(data.keywords);
+        setZipFileName(data.zip_file);
         setCurrentStep(2);
       } else {
         const errorData = await response.json();
-        console.error('Keyword search failed:', response.status, errorData);
-        setError(`Keyword search failed: ${errorData.error || 'Unknown error'}`);
+        console.error('Processing sections failed:', response.status, errorData);
+        setError(`Processing sections failed: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error performing keyword search:', error);
-      setError(`Error performing keyword search: ${error.message}`);
-    }
-  };
-
-  const handleExtractAndStructure = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/extract-and-structure`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ parsed_data: parsedData, keywords: keywords }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setExtractedData(data.extracted_data);
-        setJsonData(data.json_data);
-        setCurrentStep(3);
-      } else {
-        const errorData = await response.json();
-        console.error('Data extraction and structuring failed:', response.status, errorData);
-        setError(`Data extraction and structuring failed: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error extracting and structuring data:', error);
-      setError(`Error extracting and structuring data: ${error.message}`);
+      console.error('Error processing sections:', error);
+      setError(`Error processing sections: ${error.message}`);
     }
   };
 
   const handleDownload = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "extracted_data.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-    setCurrentStep(4);
+    if (!zipFileName) {
+      setError('No ZIP file available for download');
+      return;
+    }
+    window.location.href = `${API_BASE_URL}/api/download/${zipFileName}`;
+    setCurrentStep(3);
   };
 
   return (
@@ -166,45 +140,33 @@ export default function FileUploadWizard() {
 
           {currentStep === 1 && (
             <div>
-              <p className="mb-4 text-gray-300">File parsed successfully. Click below to perform keyword search.</p>
+              <p className="mb-4 text-gray-300">File parsed successfully. Click below to process sections.</p>
               <button
-                onClick={handleKeywordSearch}
+                onClick={handleProcessSections}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 flex items-center justify-center"
               >
-                Perform Keyword Search <ArrowRight className="ml-2" size={20} />
+                Process Sections <ArrowRight className="ml-2" size={20} />
               </button>
             </div>
           )}
 
           {currentStep === 2 && (
             <div>
-              <p className="mb-4 text-gray-300">Keywords extracted. Click below to extract and structure data.</p>
+              <p className="mb-4 text-gray-300">Sections processed. Click below to download ZIP file.</p>
               <button
-                onClick={handleExtractAndStructure}
+                onClick={handleDownload}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 flex items-center justify-center"
               >
-                Extract and Structure Data <ArrowRight className="ml-2" size={20} />
+                Download ZIP <Download className="ml-2" size={20} />
               </button>
             </div>
           )}
 
           {currentStep === 3 && (
-            <div>
-              <p className="mb-4 text-gray-300">Data extracted and structured. Click below to download JSON.</p>
-              <button
-                onClick={handleDownload}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 flex items-center justify-center"
-              >
-                Download JSON <Download className="ml-2" size={20} />
-              </button>
-            </div>
-          )}
-
-          {currentStep === 4 && (
             <div className="text-center">
               <CheckCircle size={48} className="mx-auto text-green-400 mb-4" />
               <p className="text-xl font-semibold text-white">Process Complete!</p>
-              <p className="mt-2 text-gray-300">Your file has been processed and the JSON data downloaded.</p>
+              <p className="mt-2 text-gray-300">Your file has been processed and the ZIP file downloaded.</p>
             </div>
           )}
         </div>
