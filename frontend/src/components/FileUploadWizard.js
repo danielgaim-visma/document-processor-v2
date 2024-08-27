@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, Upload, FileText, Search, Bot, Download, CheckCircle } from 'lucide-react';
 
+const API_BASE_URL = 'http://localhost:5000'; // Update this if your backend is on a different host/port
+
 const steps = [
   { name: 'Upload File', icon: Upload },
   { name: 'Parse File', icon: FileText },
@@ -16,9 +18,11 @@ export default function FileUploadWizard() {
   const [keywords, setKeywords] = useState([]);
   const [extractedData, setExtractedData] = useState(null);
   const [jsonData, setJsonData] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
+    setError(null); // Clear any previous errors
   };
 
   const handleUploadAndParse = async () => {
@@ -28,7 +32,7 @@ export default function FileUploadWizard() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/upload-and-parse', {
+      const response = await fetch(`${API_BASE_URL}/api/upload-and-parse`, {
         method: 'POST',
         body: formData,
       });
@@ -38,16 +42,19 @@ export default function FileUploadWizard() {
         setParsedData(data.parsed_data);
         setCurrentStep(1);
       } else {
-        console.error('File upload and parsing failed');
+        const errorData = await response.json();
+        console.error('File upload and parsing failed:', response.status, errorData);
+        setError(`File upload and parsing failed: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error uploading and parsing file:', error);
+      setError(`Error uploading and parsing file: ${error.message}`);
     }
   };
 
   const handleKeywordSearch = async () => {
     try {
-      const response = await fetch('/api/keyword-search', {
+      const response = await fetch(`${API_BASE_URL}/api/keyword-search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,16 +67,19 @@ export default function FileUploadWizard() {
         setKeywords(data.keywords);
         setCurrentStep(2);
       } else {
-        console.error('Keyword search failed');
+        const errorData = await response.json();
+        console.error('Keyword search failed:', response.status, errorData);
+        setError(`Keyword search failed: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error performing keyword search:', error);
+      setError(`Error performing keyword search: ${error.message}`);
     }
   };
 
   const handleExtractAndStructure = async () => {
     try {
-      const response = await fetch('/api/extract-and-structure', {
+      const response = await fetch(`${API_BASE_URL}/api/extract-and-structure`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,10 +93,13 @@ export default function FileUploadWizard() {
         setJsonData(data.json_data);
         setCurrentStep(3);
       } else {
-        console.error('Data extraction and structuring failed');
+        const errorData = await response.json();
+        console.error('Data extraction and structuring failed:', response.status, errorData);
+        setError(`Data extraction and structuring failed: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error extracting and structuring data:', error);
+      setError(`Error extracting and structuring data: ${error.message}`);
     }
   };
 
@@ -126,6 +139,12 @@ export default function FileUploadWizard() {
             ))}
           </div>
         </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-600 text-white rounded-md">
+            {error}
+          </div>
+        )}
 
         <div className="mt-8 bg-gray-700 p-6 rounded-lg">
           {currentStep === 0 && (
