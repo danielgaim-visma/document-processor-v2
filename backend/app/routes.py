@@ -82,7 +82,7 @@ def process_sections():
 
         if not json_files:
             logger.error("No sections were successfully processed")
-            return jsonify({'error': 'No sections were successfully processed', 'details': errors}), 500
+            return jsonify({'error': 'No sections were successfully processed', 'details': errors}), 1500
 
         # Create a metadata file
         metadata = {
