@@ -3,12 +3,12 @@
   "version": "1.0.0",
   "description": "dokumentbehandler application with Python backend and React frontend",
   "scripts": {
-    "start": "python Backend/run.py",
     "start": "gunicorn backend.run:app",
-    "heroku-postbuild": "cd frontend && npm install && npm run build"
+    "heroku-postbuild": "cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt"
   },
   "engines": {
     "node": "20.x",
     "npm": "10.x"
-  }
+  },
+  "cacheDirectories": ["frontend/node_modules"]
 }
