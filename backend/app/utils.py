@@ -57,7 +57,7 @@ def extract_keywords(text):
         words = word_tokenize(text.lower())
         filtered_words = [word for word in words if word.isalnum() and word not in stop_words]
         word_freq = nltk.FreqDist(filtered_words)
-        return [word for word, _ in word_freq.most_common(20)]
+        return [word for word, _ in word_freq.most_common(6)]
     except Exception as e:
         logger.error(f"Error extracting keywords: {str(e)}")
         raise
@@ -70,7 +70,7 @@ def extract_and_structure_data(content: str, keywords: List[str]) -> Dict:
         1. Identifisere og kategorisere nøkkelbegreper, enheter (f.eks. navn, datoer, steder) og relasjoner innen teksten.
         2. Strukturere informasjonen i et klart og logisk format, for eksempel JSON, med riktige etiketter og hierarki.
         3. Sørge for at resultatet er både lesbart for mennesker og optimalisert for søkbarhet av en LLM, inkludert indekserte nøkkelord og metadata-tagging.
-        4. Tilpasse ekstraheringen basert på konteksten, som i dette tilfellet er juridisk tekst relatert til varsling.
+        4. Tilpasse ekstraheringen basert på konteksten.
         5. Prioritere klarhet, konsistens og fullstendighet i strukturen."""
     }
 
