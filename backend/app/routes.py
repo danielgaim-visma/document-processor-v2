@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 def api_home():
     return jsonify({"message": "Welcome to the Document Processor API"}), 200
 
-
 @main.route('/api/upload-and-parse', methods=['POST'])
 def upload_and_parse():
     logger.debug("Received request to /api/upload-and-parse")
@@ -49,8 +48,13 @@ def upload_and_parse():
 
             logger.debug("Parsing content")
             parsed_sections = parse_content(content)
+            logger.debug(f"Number of parsed sections: {len(parsed_sections)}")
+            logger.debug(f"Type of parsed_sections: {type(parsed_sections)}")
+
             logger.debug("Extracting keywords")
             keywords = extract_keywords(content)
+            logger.debug(f"Extracted keywords: {keywords}")
+            logger.debug(f"Type of keywords: {type(keywords)}")
 
             logger.debug("Preparing response")
             return jsonify({
@@ -65,6 +69,7 @@ def upload_and_parse():
     logger.error("File upload failed")
     return jsonify({'error': 'File upload failed'}), 400
 
+
 @main.route('/api/process-sections', methods=['POST'])
 def process_sections():
     data = request.json
@@ -76,6 +81,11 @@ def process_sections():
         parsed_sections = data['parsed_sections']
         keywords = data['keywords']
         original_filename = data['original_filename']
+
+        logger.debug(f"Type of parsed_sections: {type(parsed_sections)}")
+        logger.debug(f"Length of parsed_sections: {len(parsed_sections)}")
+        logger.debug(f"Type of keywords: {type(keywords)}")
+        logger.debug(f"Keywords: {keywords}")
 
         if not parsed_sections:
             logger.error("No sections to process")
@@ -89,8 +99,24 @@ def process_sections():
         for i, section in enumerate(parsed_sections, 1):
             try:
                 logger.info(f"Processing section {i}")
+                logger.debug(f"Section content: {section[:100]}...")  # Log first 100 chars of section
+                logger.debug(f"Keywords for section {i}: {keywords}")
                 structured_data = extract_and_structure_data(section, keywords)
-                structured_data['section_number'] = i
+                logger.debug(f"Structured data for section {i}: {structured_data}")
+
+                # Check if structured_data is a list and convert it to a dictionary if necessary
+                if isinstance(structured_data, list):
+                    logger.warning(f"structured_data for section {i} is a list, converting to dictionary")
+                    structured_data = {
+                        'content': structured_data,
+                        'section_number': i
+                    }
+                elif isinstance(structured_data, dict):
+                    structured_data['section_number'] = i
+                else:
+                    logger.error(f"Unexpected type for structured_data in section {i}: {type(structured_data)}")
+                    raise TypeError(f"Unexpected type for structured_data: {type(structured_data)}")
+
                 file_name = f"section_{i:03d}.json"
                 file_path = os.path.join(output_dir, file_name)
                 with open(file_path, 'w', encoding='utf-8') as f:
@@ -99,14 +125,13 @@ def process_sections():
                 logger.info(f"Successfully processed section {i}")
             except Exception as section_error:
                 error_message = f"Error processing section {i}: {str(section_error)}"
-                logger.error(error_message)
+                logger.error(error_message, exc_info=True)
                 errors.append(error_message)
 
         if not json_files:
             logger.error("No sections were successfully processed")
             return jsonify({'error': 'No sections were successfully processed', 'details': errors}), 500
 
-        # Create a metadata file
         metadata = {
             "original_file": original_filename,
             "total_sections": len(parsed_sections),
@@ -120,7 +145,6 @@ def process_sections():
             json.dump(metadata, f, ensure_ascii=False, indent=2)
         json_files.append(metadata_file)
 
-        # Create a zip file
         zip_file_name = f"processed_files_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
         zip_file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], zip_file_name)
         with zipfile.ZipFile(zip_file_path, 'w') as zipf:
@@ -129,7 +153,7 @@ def process_sections():
 
         return jsonify({'zip_file': zip_file_name, 'errors': errors}), 200
     except Exception as e:
-        logger.error(f"Error in process_sections: {str(e)}")
+        logger.error(f"Error in process_sections: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @main.route('/api/download/<filename>', methods=['GET'])

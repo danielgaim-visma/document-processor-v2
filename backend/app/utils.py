@@ -98,6 +98,10 @@ def extract_keywords(text):
 
 
 def extract_and_structure_data(content: str, keywords: List[str]) -> Dict:
+    logger.debug(f"Content type: {type(content)}")
+    logger.debug(f"Keywords type: {type(keywords)}")
+    logger.debug(f"Keywords: {keywords}")
+
     system_instruction = {
         "role": "system",
         "content": """Du er en hjelpsom assistent som ekstraherer, strukturerer og organiserer informasjon fra tekst. Din oppgave er å:
@@ -105,7 +109,8 @@ def extract_and_structure_data(content: str, keywords: List[str]) -> Dict:
         2. Strukturere informasjonen i et klart og logisk format, for eksempel JSON, med riktige etiketter og hierarki.
         3. Sørge for at resultatet er både lesbart for mennesker og optimalisert for søkbarhet av en LLM, inkludert indekserte nøkkelord og metadata-tagging.
         4. Tilpasse ekstraheringen basert på konteksten.
-        5. Prioritere klarhet, konsistens og fullstendighet i strukturen."""
+        5. Prioritere klarhet, konsistens og fullstendighet i strukturen.
+        6. ALLTID returnere resultatet som et JSON-objekt med feltene 'title', 'body', og 'tags'."""
     }
 
     user_prompt = f"""Analyser følgende innhold og nøkkelord, og ekstraher og strukturer hovedpunktene:
@@ -122,7 +127,7 @@ def extract_and_structure_data(content: str, keywords: List[str]) -> Dict:
     try:
         logger.info(f"Sending prompt to OpenAI. Content length: {len(content)}")
         response = openai.ChatCompletion.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4-1106-preview",
             messages=[
                 system_instruction,
                 {"role": "user", "content": user_prompt}
@@ -150,7 +155,18 @@ def extract_and_structure_data(content: str, keywords: List[str]) -> Dict:
         # Parse the JSON result
         try:
             parsed_result = json.loads(result)
+
+            # Ensure the parsed result has the required fields
+            if not all(key in parsed_result for key in ['title', 'body', 'tags']):
+                logger.warning("Parsed result is missing required fields. Adding default values.")
+                parsed_result = {
+                    "title": parsed_result.get('title', 'Untitled Section'),
+                    "body": parsed_result.get('body', 'No content available.'),
+                    "tags": parsed_result.get('tags', [])
+                }
+
             return parsed_result
+
         except json.JSONDecodeError as json_error:
             logger.error(f"Failed to parse JSON from OpenAI response. Response content: {result}")
             return {
