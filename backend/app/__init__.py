@@ -10,12 +10,12 @@ def create_app(config_class=Config):
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     logger.info("Application starting...")
     logger.info(f"Upload folder: {app.config['UPLOAD_FOLDER']}")
 
-    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+    CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins on Heroku
 
     from .routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
