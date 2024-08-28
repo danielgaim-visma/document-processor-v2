@@ -1,6 +1,8 @@
-from app import create_app
+from flask import Flask
 
-app = create_app()
+app = Flask(__name__)
+
+# Your routes and other Flask configurations go here
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
