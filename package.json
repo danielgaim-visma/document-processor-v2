@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "dokumentbehandler application with Python backend and React frontend",
   "scripts": {
-    "start": "cd Backend && gunicorn -w 4 -k uvicorn.workers.UvicornWorker app:app",
-    "postinstall": "cd frontend && npm install && npm run build",
+    "start": "cd Backend && gunicorn -w 4 -k uvicorn.workers.UvicornWorker run:app",
     "heroku-postbuild": "cd frontend && npm install && npm run build"
   },
   "engines": {
