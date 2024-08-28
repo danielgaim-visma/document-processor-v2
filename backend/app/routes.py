@@ -9,8 +9,8 @@ import zipfile
 main = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
 
-@main.route('/')
-def home():
+@main.route('/api')
+def api_home():
     return jsonify({"message": "Welcome to the Document Processor API"}), 200
 
 @main.route('/api/upload-and-parse', methods=['POST'])
