@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def api_home():
     return jsonify({"message": "Welcome to the Document Processor API"}), 200
 
+
 @main.route('/api/upload-and-parse', methods=['POST'])
 def upload_and_parse():
     logger.debug("Received request to /api/upload-and-parse")
@@ -41,6 +42,11 @@ def upload_and_parse():
 
             logger.debug("Reading file content")
             content = read_file_content(file_path)
+
+            if content is None:
+                logger.error(f"Unable to read file content: {file_path}")
+                return jsonify({'error': 'Unable to read file content'}), 400
+
             logger.debug("Parsing content")
             parsed_sections = parse_content(content)
             logger.debug("Extracting keywords")

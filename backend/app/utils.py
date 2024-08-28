@@ -9,6 +9,10 @@ import openai
 import logging
 import json
 from typing import List, Dict
+import PyPDF2
+from typing import Optional
+
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -19,25 +23,55 @@ nltk.download('stopwords', quiet=True)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-def read_file_content(file_path):
+
+def read_file_content(file_path: str) -> Optional[str]:
     file_extension = os.path.splitext(file_path)[1].lower()
+
+    if not os.path.exists(file_path):
+        logger.error(f"File not found: {file_path}")
+        return None
 
     try:
         if file_extension == '.txt':
+            logger.info(f"Reading .txt file: {file_path}")
             with open(file_path, 'r', encoding='utf-8') as file:
                 return file.read()
+
         elif file_extension == '.docx':
+            logger.info(f"Reading .docx file: {file_path}")
             doc = docx.Document(file_path)
             return ' '.join([para.text for para in doc.paragraphs])
+
         elif file_extension == '.xlsx':
-            workbook = openpyxl.load_workbook(file_path)
+            logger.info(f"Reading .xlsx file: {file_path}")
+            workbook = openpyxl.load_workbook(file_path, read_only=True, data_only=True)
             sheet = workbook.active
-            return '\n'.join([' '.join([str(cell.value) for cell in row]) for row in sheet.iter_rows()])
+            return '\n'.join([' '.join([str(cell.value) if cell.value is not None else '' for cell in row]) for row in sheet.iter_rows()])
+
+        elif file_extension == '.pdf':
+            logger.info(f"Reading .pdf file: {file_path}")
+            with open(file_path, 'rb') as file:
+                reader = PyPDF2.PdfReader(file)
+                return ' '.join([page.extract_text() for page in reader.pages])
+
         else:
-            raise ValueError(f"Unsupported file type: {file_extension}")
+            logger.warning(f"Unsupported file type: {file_extension}")
+            return None
+
+    except PermissionError:
+        logger.error(f"Permission denied when trying to read file: {file_path}")
+    except docx.opc.exceptions.PackageNotFoundError:
+        logger.error(f"Invalid or corrupted .docx file: {file_path}")
+    except openpyxl.utils.exceptions.InvalidFileException:
+        logger.error(f"Invalid or corrupted .xlsx file: {file_path}")
+    except PyPDF2.errors.PdfReadError:
+        logger.error(f"Invalid or corrupted .pdf file: {file_path}")
+    except UnicodeDecodeError:
+        logger.error(f"Unable to decode file (possibly not in UTF-8 encoding): {file_path}")
     except Exception as e:
-        logger.error(f"Error reading file {file_path}: {str(e)}")
-        raise
+        logger.error(f"Unexpected error reading file {file_path}: {str(e)}", exc_info=True)
+
+    return None
 
 def parse_content(content):
     try:

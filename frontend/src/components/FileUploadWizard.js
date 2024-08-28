@@ -30,10 +30,12 @@ const FileUploadWizard = () => {
   const MAX_FILE_SIZE = useMemo(() => 10 * 1024 * 1024, []); // 10MB
 
   const ALLOWED_FILE_TYPES = useMemo(() => [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ], []);
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+], []);
 
   const testServerConnection = useCallback(async () => {
     try {
@@ -56,7 +58,7 @@ const FileUploadWizard = () => {
       return;
     }
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      setError('Ugyldig filtype. Vennligst last opp en PDF eller Word-dokument.');
+      setError('Ugyldig filtype. Vennligst last opp en PDF, Word-dokument, tekstfil eller Excel-ark.');
       return;
     }
     setFile(file);
