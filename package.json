@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "dokumentbehandler application with Python backend and React frontend",
   "scripts": {
-    "start": "gunicorn -w 4 -k uvicorn.workers.UvicornWorker Backend.run:app",
+    "start": "gunicorn wsgi:app",
     "heroku-postbuild": "cd frontend && npm install && npm run build"
   },
   "engines": {
