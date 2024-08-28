@@ -11,6 +11,7 @@ et-xmlfile==1.1.0
 Flask==3.0.3
 Flask-Cors==3.0.10
 frozenlist==1.4.1
+gunicorn==20.1.0
 idna==3.8
 importlib_metadata==8.4.0
 itsdangerous==2.2.0
@@ -29,6 +30,7 @@ requests==2.32.3
 six==1.16.0
 tqdm==4.66.5
 urllib3==2.2.2
+uvicorn==0.17.6
 Werkzeug==3.0.4
 yarl==1.9.4
 zipp==3.20.1
