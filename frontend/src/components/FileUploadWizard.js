@@ -1,15 +1,10 @@
-import React, { useState } from 'react';
-import { ArrowRight, Upload, FileText, Bot, Download, CheckCircle, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Upload, Bot, Download, CheckCircle, Loader } from 'lucide-react';
 
 const API_BASE_URL = 'http://localhost:5000';
+console.log('API_BASE_URL:', API_BASE_URL);
 
-const trinn = [
-  { navn: 'Last opp fil', ikon: Upload },
-  { navn: 'Behandle seksjoner', ikon: Bot },
-  { navn: 'Last ned ZIP', ikon: Download }
-];
-
-export default function FilopplastningsVeiviser() {
+const FilopplastningsVeiviser = () => {
   const [nåværendeTrinn, settNåværendeTrinn] = useState(0);
   const [fil, settFil] = useState(null);
   const [parsedeSeksjoner, settParsedeSeksjoner] = useState(null);
@@ -19,8 +14,30 @@ export default function FilopplastningsVeiviser() {
   const [lasterOpp, settLasterOpp] = useState(false);
   const [behandler, settBehandler] = useState(false);
 
+  const trinn = [
+    { navn: 'Last opp fil', ikon: Upload },
+    { navn: 'Behandle seksjoner', ikon: Bot },
+    { navn: 'Last ned ZIP', ikon: Download }
+  ];
+
+  const testServerConnection = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/`);
+      const data = await response.text();
+      console.log("Server connection test result:", data);
+    } catch (error) {
+      console.error("Server connection test failed:", error);
+    }
+  };
+
+  useEffect(() => {
+    testServerConnection();
+  }, []);
+
   const håndterFilEndring = (hendelse) => {
-    settFil(hendelse.target.files[0]);
+    const selectedFile = hendelse.target.files[0];
+    console.log("Selected file:", selectedFile);
+    settFil(selectedFile);
     settFeil(null);
   };
 
@@ -28,28 +45,38 @@ export default function FilopplastningsVeiviser() {
     if (!fil) return;
 
     settLasterOpp(true);
+    settFeil(null);
     const formData = new FormData();
     formData.append('file', fil);
 
     try {
+      console.log("Sending request to server...");
+      console.log("Request URL:", `${API_BASE_URL}/api/upload-and-parse`);
+      console.log("File being sent:", fil);
+
       const respons = await fetch(`${API_BASE_URL}/api/upload-and-parse`, {
         method: 'POST',
         body: formData,
+        mode: 'cors',
+        // credentials: 'include', // Commented out for testing
       });
+
+      console.log("Response received:", respons);
 
       if (respons.ok) {
         const data = await respons.json();
+        console.log("Parsed data:", data);
         settParsedeSeksjoner(data.parsed_sections);
         settNøkkelord(data.keywords);
         settNåværendeTrinn(1);
       } else {
-        const feilData = await respons.json();
-        console.error('Filopplasting og parsing mislyktes:', respons.status, feilData);
-        settFeil(`Filopplasting og parsing mislyktes: ${feilData.error || 'Ukjent feil'}`);
+        const feilTekst = await respons.text();
+        console.error('Server responded with an error:', respons.status, feilTekst);
+        settFeil(`Filopplasting og parsing mislyktes: ${feilTekst} (Status: ${respons.status})`);
       }
     } catch (feil) {
-      console.error('Feil ved opplasting og parsing av fil:', feil);
-      settFeil(`Feil ved opplasting og parsing av fil: ${feil.message}`);
+      console.error('Network error:', feil);
+      settFeil(`Nettverksfeil ved opplasting og parsing av fil: ${feil.message}`);
     } finally {
       settLasterOpp(false);
     }
@@ -200,4 +227,6 @@ export default function FilopplastningsVeiviser() {
       </div>
     </div>
   );
-}
+};
+
+export default FilopplastningsVeiviser;

@@ -8,15 +8,14 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Ensure the UPLOAD_FOLDER exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__name__)
     logger.info("Application starting...")
+    logger.info(f"Upload folder: {app.config['UPLOAD_FOLDER']}")
 
-    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
 
     from .routes import main as main_blueprint
     app.register_blueprint(main_blueprint)

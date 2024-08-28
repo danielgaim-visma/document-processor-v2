@@ -9,13 +9,24 @@ import zipfile
 main = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
 
+@main.route('/')
+def home():
+    return jsonify({"message": "Welcome to the Document Processor API"}), 200
+
 @main.route('/api/upload-and-parse', methods=['POST'])
 def upload_and_parse():
+    logger.debug("Received request to /api/upload-and-parse")
+    logger.debug(f"Request files: {request.files}")
+    logger.debug(f"Request form: {request.form}")
+
     if 'file' not in request.files:
         logger.error("No file part in the request")
         return jsonify({'error': 'No file part'}), 400
 
     file = request.files['file']
+    logger.debug(f"File object: {file}")
+    logger.debug(f"File name: {file.filename}")
+
     if file.filename == '':
         logger.error("No selected file")
         return jsonify({'error': 'No selected file'}), 400
@@ -24,20 +35,25 @@ def upload_and_parse():
         try:
             filename = file.filename
             file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            logger.debug(f"Attempting to save file to: {file_path}")
             file.save(file_path)
             logger.info(f"File saved: {file_path}")
 
+            logger.debug("Reading file content")
             content = read_file_content(file_path)
+            logger.debug("Parsing content")
             parsed_sections = parse_content(content)
+            logger.debug("Extracting keywords")
             keywords = extract_keywords(content)
 
+            logger.debug("Preparing response")
             return jsonify({
                 'parsed_sections': parsed_sections,
                 'keywords': keywords,
                 'original_filename': filename
             }), 200
         except Exception as e:
-            logger.error(f"Error in upload_and_parse: {str(e)}")
+            logger.error(f"Error in upload_and_parse: {str(e)}", exc_info=True)
             return jsonify({'error': str(e)}), 500
 
     logger.error("File upload failed")
@@ -82,7 +98,7 @@ def process_sections():
 
         if not json_files:
             logger.error("No sections were successfully processed")
-            return jsonify({'error': 'No sections were successfully processed', 'details': errors}), 1500
+            return jsonify({'error': 'No sections were successfully processed', 'details': errors}), 500
 
         # Create a metadata file
         metadata = {
