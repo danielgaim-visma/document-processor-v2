@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "dokumentbehandler application with Python backend and React frontend",
   "scripts": {
-    "start": "python wsgi.py",
+    "start": "python Backend/run.py",
     "heroku-postbuild": "cd frontend && npm install && npm run build"
   },
   "engines": {
