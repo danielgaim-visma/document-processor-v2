@@ -1,7 +1,9 @@
 import os
 import sys
 
-# Add the current directory to the Python path
+from logging_config import setup_logging
+logger = setup_logging()
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 

@@ -3,6 +3,7 @@ from flask_cors import CORS
 from .config import Config
 import os
 import logging
+logger = logging.getLogger(__name__)
 
 def create_app(config_class=Config):
     # Check if we're running on Heroku

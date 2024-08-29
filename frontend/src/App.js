@@ -1,5 +1,5 @@
 import React from 'react';
-import FileUploadWizard from './components/FileUploadWizard';
+import FileUploadWizard from './components/FileUploadWizard/FileUploadWizard';
 
 function App() {
   return (
