@@ -1,3 +1,5 @@
 /backend/.env
 /backend/app/uploads/
 .venv
+node_modules
+logs
