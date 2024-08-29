@@ -4,7 +4,7 @@
   "description": "dokumentbehandler application with Python backend and React frontend",
   "scripts": {
     "start": "cd backend && gunicorn run:app",
-    "heroku-postbuild": "cd frontend && npm install && npm run build && cd .. && pip install -r requirements.txt",
+    "heroku-postbuild": "cd frontend && npm install --production=false && npm run build && cd .. && pip install -r requirements.txt",
     "build": "cd frontend && npm run build"
   },
   "engines": {
